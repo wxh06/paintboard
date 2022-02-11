@@ -1,10 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head>
 
-  </head>
-  <body>
+<head>
+
+</head>
+
+<body>
+
+  <div id="app">
     <h1>绘板</h1>
-    <!-- TODO -->
-  </body>
+  </div>
+
+  <script src="node_modules/axios/dist/axios.min.js"></script>
+  <script src="node_modules/socket.io/client-dist/socket.io.min.js"></script>
+  <script type="module">
+    import * as d3 from 'https://cdn.skypack.dev/d3@6';
+    window.d3 = d3;
+  </script>
+
+  <script type="module" src="index.js"></script>
+
+</body>
+
 </html>

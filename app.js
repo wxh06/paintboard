@@ -1,35 +1,49 @@
-import Express from 'express'
-import { Server } from 'http'
-import { urlencoded as urlencodedParser } from 'body-parser'
-import SocketIO from 'socket.io'
+const express = require('express');
+const bodyParser = require('body-parser');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
-const app = Express()
-const http = Server(app)
-const io = SocketIO(http)
-app.use(urlencodedParser({ extended: true }))
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-const PaintBoardSizeX = 200
-const PaintBoardSizeY = 100
-const AllowedColors = [0, 1, 2]
+const PaintBoardSizeX = 1280;
+const PaintBoardSizeY = 720;
 
-let matrix = new Array(PaintBoardSizeY).fill(null).map(() => new Array(PaintBoardSizeX).fill(0))
+const matrix = new Array(PaintBoardSizeY).fill(null).map(
+  () => new Array(PaintBoardSizeX).fill([0, 0, 0, 255]),
+);
 
-app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'))
+app.get('/', (req, res) => res.sendFile(`${__dirname}/index.html`));
 
-app.get('/board', (req, res) => res.send(matrix.map(column => column.map(x => `${x}`).join('')).join('\n')))
+app.get('/index.js', (req, res) => res.sendFile(`${__dirname}/index.js`));
+
+app.use('/node_modules', express.static('node_modules'));
+
+app.get(
+  '/board',
+  (req, res) => res.send(JSON.stringify(matrix)),
+);
 
 app.post('/paint', (req, res) => {
-  const x = req.body.x
-  const y = req.body.y
-  const color = parseInt(req.body.color)
-  if (!AllowedColors.includes(color) || x > PaintBoardSizeX || x < 0 || y > PaintBoardSizeY || y < 0) {
-    res.status(400)
-    res.json({ success: false, data: "Invalid parameters" })
+  const {
+    x, y, r, g, b, a,
+  } = req.body;
+  if (
+    x > PaintBoardSizeX || x < 0 || y > PaintBoardSizeY || y < 0
+    || r > 255 || r < 0 || g > 255 || g < 0 || b > 255 || b < 0 || a > 255 || a < 0
+  ) {
+    res.status(400);
+    res.json({ success: false, data: 'Invalid parameters' });
   }
 
-  matrix[y][x] = color
-  res.json({ success: true, data: null })
-  io.emit('matrix_update', { x, y, color })
-})
+  matrix[y][x] = [r, g, b, a];
+  res.json({ success: true, data: null });
+  io.emit('matrix_update', {
+    x, y, color: matrix[y][x],
+  });
+});
 
-http.listen(3003, () => console.log("Listening on :3003"))
+httpServer.listen(3003, () => console.log('Listening on :3003'));
